@@ -8,19 +8,6 @@
   directory = "functions"
   node_bundler = "esbuild"
 
-# Configuración de funciones
-[[functions]]
-  name = "guardar-datos"
-  handler = "functions/guardar-datos.js"
-
-[[functions]]
-  name = "obtener-datos"
-  handler = "functions/obtener-datos.js"
-
-[[functions]]
-  name = "listar-usuarios"
-  handler = "functions/listar-usuarios.js"
-
 # CORS headers
 [[headers]]
   for = "/api/*"
@@ -29,8 +16,14 @@
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
 
+# Endpoints /api/* documentados en las funciones
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
 # Redirects para SPA
 [[redirects]]
   from = "/*"
-  to = "/index-fase3.html"
+  to = "/index-fase4.html"
   status = 200
