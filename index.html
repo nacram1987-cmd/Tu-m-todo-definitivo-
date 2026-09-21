@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Fluxia">
+    <meta name="application-name" content="Fluxia">
+    <meta name="theme-color" content="#0F3A5C">
+    <title>Fluxia - Control absoluto. Flujo perfecto.</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        fluxiaDark: '#0F3A5C',
+                        fluxiaPrimary: '#2563EB',
+                        fluxiaAccent: '#10B981',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans pb-24 select-none">
+
+    <!-- Header Principal -->
+    <header class="bg-fluxiaDark text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-blue-500 text-white p-2 rounded-xl font-bold flex items-center justify-center w-9 h-9 shadow">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">Fluxia</h1>
+                    <p class="text-[10px] text-slate-300">Control absoluto. Flujo perfecto.</p>
+                </div>
+            </div>
+            <button onclick="app.resetDataModal()" class="text-xs bg-slate-700/60 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-slate-200 transition">
+                <i class="fa-solid fa-rotate-right mr-1"></i> Reiniciar
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal / Vistas -->
+    <main class="max-w-md mx-auto p-4 min-h-[calc(100vh-130px)]">
+        
+        <!-- VISTA 1: DASHBOARD -->
+        <section id="view-dashboard" class="space-y-4 view-section">
+            <div class="bg-gradient-to-br from-blue-600 to-fluxiaDark text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                <p class="text-xs uppercase tracking-wider text-blue-200 font-medium">Balance Disponible</p>
+                <h2 id="dash-balance" class="text-3xl font-extrabold mt-1">0,00 €</h2>
+                <div class="mt-4 grid grid-cols-2 gap-3 pt-3 border-t border-white/15">
+                    <div>
+                        <p class="text-xs text-blue-200">Ingresos Totales</p>
+                        <p id="dash-ingresos" class="text-base font-semibold mt-0.5">0,00 €</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-blue-200">Gastos Totales</p>
+                        <p id="dash-gastos" class="text-base font-semibold mt-0.5">0,00 €</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-700 text-sm mb-3 flex items-center">
+                    <i class="fa-solid fa-bolt text-amber-500 mr-2"></i> Acciones Rápidas
+                </h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="app.openModal('movement', 'ingreso')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-3 rounded-xl font-medium text-xs flex items-center justify-center transition">
+                        <i class="fa-solid fa-circle-plus mr-1.5 text-base"></i> Nuevo Ingreso
+                    </button>
+                    <button onclick="app.openModal('movement', 'retiro')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 p-3 rounded-xl font-medium text-xs flex items-center justify-center transition">
+                        <i class="fa-solid fa-circle-minus mr-1.5 text-base"></i> Retiro / Gasto
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-slate-700 text-sm flex items-center">
+                        <i class="fa-solid fa-clock-rotate-left text-blue-500 mr-2"></i> Provisiones Activas
+                    </h3>
+                </div>
+                <div id="dash-provisions-summary" class="space-y-2">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 2: PROVISIONES / RETIROS TEMPORALES -->
+        <section id="view-provisions" class="space-y-4 view-section hidden">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="font-bold text-lg text-slate-800">Provisiones y Retiros</h2>
+                    <p class="text-xs text-slate-500">Control de fondos pendientes de reponer</p>
+                </div>
+                <button onclick="app.openModal('provision')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-semibold shadow transition flex items-center">
+                    <i class="fa-solid fa-plus mr-1"></i> Nueva Provisión
+                </button>
+            </div>
+
+            <!-- Tarjetas de Retiros Activos (Pendientes de reponer > 0) -->
+            <div class="space-y-3" id="active-provisions-list">
+                <!-- Dinámico -->
+            </div>
+
+            <div class="pt-4 border-t border-slate-200">
+                <h3 class="font-bold text-slate-700 text-sm mb-2">Historial de Provisiones Resueltas</h3>
+                <div class="space-y-2" id="archived-provisions-list">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: MOVIMIENTOS -->
+        <section id="view-movements" class="space-y-4 view-section hidden">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="font-bold text-lg text-slate-800">Movimientos</h2>
+                    <p class="text-xs text-slate-500">Registro histórico de operaciones</p>
+                </div>
+                <button onclick="app.openModal('movement', 'ingreso')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-semibold shadow transition flex items-center">
+                    <i class="fa-solid fa-plus mr-1"></i> Registrar
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div id="movements-list" class="divide-y divide-slate-100">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Navegación Inferior (Bottom Bar) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40">
+        <div class="max-w-md mx-auto grid grid-cols-3 h-16">
+            <button onclick="app.switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center text-blue-600 font-medium transition">
+                <i class="fa-solid fa-house text-lg mb-0.5"></i>
+                <span class="text-[10px]">Dashboard</span>
+            </button>
+            <button onclick="app.switchTab('provisions')" id="nav-provisions" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 font-medium transition">
+                <i class="fa-solid fa-wallet text-lg mb-0.5"></i>
+                <span class="text-[10px]">Provisiones</span>
+            </button>
+            <button onclick="app.switchTab('movements')" id="nav-movements" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 font-medium transition">
+                <i class="fa-solid fa-list-ul text-lg mb-0.5"></i>
+                <span class="text-[10px]">Movimientos</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal Universal -->
+    <div id="app-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="font-bold text-base text-slate-800">Nuevo Registro</h3>
+                <button onclick="app.closeModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="modal-form" onsubmit="app.handleFormSubmit(event)" class="space-y-3">
+                <input type="hidden" id="modal-type">
+                <input type="hidden" id="modal-subtype">
+                <input type="hidden" id="modal-edit-id">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Concepto / Título</label>
+                    <input type="text" id="form-concept" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="Ej. Retiro temporal colchón...">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Importe Total (€)</label>
+                    <input type="number" step="0.01" id="form-amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="0.00">
+                </div>
+
+                <div id="container-pendiente" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Pendiente de reponer (€)</label>
+                    <input type="number" step="0.01" id="form-pending" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="Si se deja en blanco, será igual al total">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha</label>
+                    <input type="date" id="form-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow transition text-sm">
+                        Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lógica JavaScript Unificada -->
+    <script>
+        class FluxiaApp {
+            constructor() {
+                this.state = {
+                    currentTab: 'dashboard',
+                    movements: [],
+                    provisions: []
+                };
+                this.loadData();
+            }
+
+            initDate() {
+                const today = new Date().toISOString().split('T')[0];
+                const dateInput = document.getElementById('form-date');
+                if (dateInput) dateInput.value = today;
+            }
+
+            loadData() {
+                const saved = localStorage.getItem('fluxia_data');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        this.state.movements = parsed.movements || [];
+                        this.state.provisions = parsed.provisions || [];
+                    } catch (e) {
+                        console.error('Error cargando localStorage', e);
+                    }
+                } else {
+                    this.state.provisions = [
+                        { id: '1', concept: 'Retiro temporal colchón', amount: 300, pending: 150, date: '2026-09-01', archived: false }
+                    ];
+                    this.state.movements = [
+                        { id: '101', concept: 'Nómina mensual', amount: 2200, type: 'ingreso', date: '2026-09-01' },
+                        { id: '102', concept: 'Supermercado', amount: 85.50, type: 'retiro', date: '2026-09-05' }
+                    ];
+                    this.saveData();
+                }
+                this.render();
+            }
+
+            saveData() {
+                localStorage.setItem('fluxia_data', JSON.stringify({
+                    movements: this.state.movements,
+                    provisions: this.state.provisions
+                }));
+                this.render();
+            }
+
+            switchTab(tabId) {
+                this.state.currentTab = tabId;
+                ['dashboard', 'provisions', 'movements'].forEach(tab => {
+                    const section = document.getElementById(`view-${tab}`);
+                    const navBtn = document.getElementById(`nav-${tab}`);
+                    if (tab === tabId) {
+                        section.classList.remove('hidden');
+                        navBtn.className = 'flex flex-col items-center justify-center text-blue-600 font-medium transition';
+                    } else {
+                        section.classList.add('hidden');
+                        navBtn.className = 'flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 font-medium transition';
+                    }
+                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            openModal(type, subtype = '') {
+                const modal = document.getElementById('app-modal');
+                const title = document.getElementById('modal-title');
+                const typeInput = document.getElementById('modal-type');
+                const subtypeInput = document.getElementById('modal-subtype');
+                const editIdInput = document.getElementById('modal-edit-id');
+                const containerPending = document.getElementById('container-pendiente');
+                
+                typeInput.value = type;
+                subtypeInput.value = subtype;
+                editIdInput.value = '';
+                document.getElementById('modal-form').reset();
+                this.initDate();
+
+                if (type === 'provision') {
+                    title.textContent = 'Nueva Provisión / Retiro Temporal';
+                    containerPending.classList.remove('hidden');
+                } else {
+                    title.textContent = subtype === 'ingreso' ? 'Registrar Ingreso' : 'Registrar Retiro / Gasto';
+                    containerPending.classList.add('hidden');
+                }
+
+                modal.classList.remove('hidden');
+            }
+
+            closeModal() {
+                document.getElementById('app-modal').classList.add('hidden');
+            }
+
+            handleFormSubmit(e) {
+                e.preventDefault();
+                const type = document.getElementById('modal-type').value;
+                const subtype = document.getElementById('modal-subtype').value;
+                const concept = document.getElementById('form-concept').value;
+                const amount = parseFloat(document.getElementById('form-amount').value) || 0;
+                const date = document.getElementById('form-date').value;
+                const editId = document.getElementById('modal-edit-id').value;
+
+                if (type === 'provision') {
+                    const pendingRaw = document.getElementById('form-pending').value;
+                    const pendingVal = pendingRaw !== '' ? parseFloat(pendingRaw) : amount;
+                    const archived = pendingVal <= 0;
+
+                    if (editId) {
+                        const prov = this.state.provisions.find(p => p.id === editId);
+                        if (prov) {
+                            prov.concept = concept;
+                            prov.amount = amount;
+                            prov.pending = pendingVal;
+                            prov.archived = archived;
+                            prov.date = date;
+                        }
+                    } else {
+                        this.state.provisions.unshift({
+                            id: Date.now().toString(),
+                            concept,
+                            amount,
+                            pending: pendingVal,
+                            date,
+                            archived
+                        });
+                    }
+                } else {
+                    if (editId) {
+                        const mov = this.state.movements.find(m => m.id === editId);
+                        if (mov) {
+                            mov.concept = concept;
+                            mov.amount = amount;
+                            mov.type = subtype;
+                            mov.date = date;
+                        }
+                    } else {
+                        this.state.movements.unshift({
+                            id: Date.now().toString(),
+                            concept,
+                            amount,
+                            type: subtype,
+                            date
+                        });
+                    }
+                }
+
+                this.saveData();
+                this.closeModal();
+            }
+
+            editProvision(id) {
+                const prov = this.state.provisions.find(p => p.id === id);
+                if (!prov) return;
+
+                this.openModal('provision');
+                document.getElementById('modal-title').textContent = 'Editar Provisión';
+                document.getElementById('modal-edit-id').value = prov.id;
+                document.getElementById('form-concept').value = prov.concept;
+                document.getElementById('form-amount').value = prov.amount;
+                document.getElementById('form-pending').value = prov.pending;
+                document.getElementById('form-date').value = prov.date;
+            }
+
+            replenishProvision(id) {
+                const prov = this.state.provisions.find(p => p.id === id);
+                if (!prov) return;
+                
+                const addAmount = prompt(`¿Cuánto deseas reponer a "${prov.concept}"?\nPendiente actual: ${prov.pending.toFixed(2)} €`, prov.pending);
+                if (addAmount !== null) {
+                    const val = parseFloat(addAmount);
+                    if (!isNaN(val) && val > 0) {
+                        prov.pending = Math.max(0, prov.pending - val);
+                        if (prov.pending === 0) {
+                            prov.archived = true;
+                        }
+                        this.saveData();
+                    }
+                }
+            }
+
+            deleteItem(type, id) {
+                if (!confirm('¿Estás seguro de eliminar este registro?')) return;
+                if (type === 'provision') {
+                    this.state.provisions = this.state.provisions.filter(p => p.id !== id);
+                } else {
+                    this.state.movements = this.state.movements.filter(m => m.id !== id);
+                }
+                this.saveData();
+            }
+
+            resetDataModal() {
+                if (confirm('¿Deseas restablecer todos los datos de la aplicación a los valores iniciales?')) {
+                    localStorage.removeItem('fluxia_data');
+                    this.loadData();
+                }
+            }
+
+            render() {
+                const totalIngresos = this.state.movements
+                    .filter(m => m.type === 'ingreso')
+                    .reduce((acc, m) => acc + m.amount, 0);
+
+                const totalRetiros = this.state.movements
+                    .filter(m => m.type === 'retiro')
+                    .reduce((acc, m) => acc + m.amount, 0);
+
+                const balance = totalIngresos - totalRetiros;
+
+                document.getElementById('dash-balance').textContent = balance.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                document.getElementById('dash-ingresos').textContent = totalIngresos.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                document.getElementById('dash-gastos').textContent = totalRetiros.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+                // Filtro exclusivo para evitar duplicados entre activas e historial
+                const activeProvs = this.state.provisions.filter(p => p.pending > 0 && !p.archived);
+                const resolvedProvs = this.state.provisions.filter(p => p.pending <= 0 || p.archived);
+
+                // Render Dashboard
+                const dashProvSummary = document.getElementById('dash-provisions-summary');
+                if (activeProvs.length === 0) {
+                    dashProvSummary.innerHTML = `<p class="text-xs text-slate-400 italic">No hay provisiones pendientes de reponer.</p>`;
+                } else {
+                    dashProvSummary.innerHTML = activeProvs.map(p => `
+                        <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                            <div>
+                                <span class="font-semibold text-slate-700">${p.concept}</span>
+                                <span class="block text-[10px] text-slate-400">Pendiente: ${p.pending.toFixed(2)} €</span>
+                            </div>
+                            <button onclick="app.replenishProvision('${p.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded-lg font-medium transition">
+                                Reponer
+                            </button>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Provisiones Activas
+                const activeList = document.getElementById('active-provisions-list');
+                if (activeProvs.length === 0) {
+                    activeList.innerHTML = `<div class="bg-white p-4 rounded-2xl text-center border border-slate-100 text-xs text-slate-400">No hay retiros o provisiones activas pendientes.</div>`;
+                } else {
+                    activeList.innerHTML = activeProvs.map(p => `
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm">${p.concept}</h4>
+                                    <p class="text-[11px] text-slate-400">Fecha: ${p.date}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-bold text-rose-600">${p.amount.toFixed(2)} €</span>
+                                    <span class="block text-[10px] text-slate-500 font-medium">Pendiente: ${p.pending.toFixed(2)} €</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2 pt-2 border-t border-slate-100">
+                                <button onclick="app.replenishProvision('${p.id}')" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center">
+                                    <i class="fa-solid fa-coins mr-1"></i> Reponer
+                                </button>
+                                <button onclick="app.editProvision('${p.id}')" class="px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-xl text-xs transition">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="app.deleteItem('provision', '${p.id}')" class="px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 py-2 rounded-xl text-xs transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Historial
+                const archivedList = document.getElementById('archived-provisions-list');
+                if (resolvedProvs.length === 0) {
+                    archivedList.innerHTML = `<p class="text-xs text-slate-400 italic">Sin elementos en el historial.</p>`;
+                } else {
+                    archivedList.innerHTML = resolvedProvs.map(p => `
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
+                            <div>
+                                <span class="font-semibold text-slate-600 line-through">${p.concept}</span>
+                                <span class="block text-[10px] text-emerald-600 font-medium">Repuesto por completo</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-slate-500 font-medium">${p.amount.toFixed(2)} €</span>
+                                <button onclick="app.deleteItem('provision', '${p.id}')" class="text-slate-400 hover:text-rose-600 p-1">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Movimientos
+                const movList = document.getElementById('movements-list');
+                if (this.state.movements.length === 0) {
+                    movList.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">No hay movimientos registrados.</div>`;
+                } else {
+                    movList.innerHTML = this.state.movements.map(m => `
+                        <div class="p-3.5 flex justify-between items-center text-xs hover:bg-slate-50/50 transition">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold ${m.type === 'ingreso' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}">
+                                    <i class="fa-solid ${m.type === 'ingreso' ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                                </div>
+                                <div>
+                                    <span class="font-bold text-slate-800 block">${m.concept}</span>
+                                    <span class="text-[10px] text-slate-400">${m.date}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="font-extrabold ${m.type === 'ingreso' ? 'text-emerald-600' : 'text-slate-800'}">
+                                    ${m.type === 'ingreso' ? '+' : '-'}${m.amount.toFixed(2)} €
+                                </span>
+                                <button onclick="app.deleteItem('movement', '${m.id}')" class="text-slate-300 hover:text-rose-600 transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        const app = new FluxiaApp();
+    </script>
+</body>
+</html>
